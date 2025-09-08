@@ -91,10 +91,10 @@ while True:
             faces = face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5)
 
             for (x,y,w,h) in faces:
-                #Draw the rectangle
+                #Draw a rectangle around the persons face
                 cv2.rectangle(frame_flipped, (x,y), (x+w, y+h), (0,0,255), 2)
 
-                #Display the name
+                #Display the name of the person detected above the rectangle
                 cv2.putText(frame_flipped, person_ID, (x,y-10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0,0,255), 2)
                 break
 
@@ -106,7 +106,7 @@ while True:
     cv2.putText(frame_flipped, "'q' to quit", (frame_flipped.shape[1]-125,25), cv2.FONT_HERSHEY_COMPLEX, 0.7, (0,0,0), 1)
 
     # Show webcam frame
-    cv2.imshow("Monitor", frame_flipped)
+    cv2.imshow("Attendance App", frame_flipped)
     
     #Quit if "q" key is pressed
     if cv2.waitKey(1) & 0xFF == ord('q'):
