@@ -36,12 +36,20 @@ def update_record(ID, Time):
                 continue
         object_writer.writerow([Time,ID])
         return "Record Added successfully"
+    
+#Function to delete the temporary Image
+def tempimgdel(path):
+    if os.path.exists(path):
+        os.remove(path)
+        print("Temp image successfully deleted, Quitting")
+    elif os.path.exists(path) == False:
+        print("Temp file does not Exist, Quitting")
 
 initcheck() 
 
 cap = cv2.VideoCapture(0)
 
-
+#Main Loop
 while True:
 
     success, frame = cap.read() #Read the webcam
@@ -60,7 +68,7 @@ while True:
     
     # Print the closest match's name if found
     if len(result)>0:
-        df = result[0]
+        df = result[0] #Takes the closest match
 
         # If a face is matched
         if not df.empty:
@@ -101,6 +109,7 @@ while True:
     
     #Quit if "q" key is pressed
     if cv2.waitKey(1) & 0xFF == ord('q'):
+        tempimgdel(temp_img_path)
         break
     
 #Close the Webcam and destroy all windows
