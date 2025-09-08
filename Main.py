@@ -57,7 +57,7 @@ while True:
         print("Webcam Not responding")
         break
     
-    frame_flipped = cv2.flip(frame, 1) #Flip the frame along the vertical axis
+    frame_flipped = cv2.flip(frame, 1) #Flips the frame along the vertical axis
 
     # Save current frame temporarily
     temp_img_path = "temp.jpg"
@@ -101,11 +101,12 @@ while True:
         else:
             print("Standby")
             cv2.putText(frame_flipped, "Waiting for a Face", (0, 35), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0,0), 2)
-   
+    
+    # displays q to quit
+    cv2.putText(frame_flipped, "'q' to quit", (frame_flipped.shape[1]-125,25), cv2.FONT_HERSHEY_COMPLEX, 0.7, (0,0,0), 1)
 
     # Show webcam frame
     cv2.imshow("Monitor", frame_flipped)
-    
     
     #Quit if "q" key is pressed
     if cv2.waitKey(1) & 0xFF == ord('q'):
