@@ -7,6 +7,7 @@ cap = c.VideoCapture(0)
 while True:
     success, frame = cap.read()
     if not success:
+        print("Capture Source Failure")
         break
 
     frame_flipped = c.flip(frame, flipCode=1)
