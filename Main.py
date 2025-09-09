@@ -10,7 +10,7 @@ cwd = os.getcwd() # Gets the current working directory
 #Function to check if all required Directories are present and if not present, create them
 def initcheck():
     dir_list = os.listdir(cwd)
-    print(dir_list)
+    #print(dir_list)
     if "Records" not in dir_list:
         print("Records folder not Present, creating records folder")
         os.mkdir(cwd+"/Records")
@@ -45,46 +45,47 @@ def tempimgdel(path):
     elif os.path.exists(path) == False:
         print("Temp file does not Exist, Quitting")
 
-#A Function to perform the Normal Face recognition Operation
+#A function that uses haarcascades to crop the image and deepface performs face recognition on that cropped image
 def Face_recognition():
-    # Perform face recognition
-    result = DeepFace.find(img_path=temp_img_path, db_path=cwd+"/RegisteredFaces", enforce_detection=False)
+    face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades+"haarcascade_frontalface_default.xml")
+    db_path = cwd+"/RegisteredFaces"
+    gray = cv2.cvtColor(frame_flipped, cv2.COLOR_BGR2GRAY)
 
-    # Print the closest match's name if found
-    if len(result)>0:
-        df = result[0] #Takes the closest match
+    faces = face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5)
+    for (x,y,w,h) in faces:
+        face_cropped = frame_flipped[y:y+h, x:x+w]
 
-    # If a face is matched
-    if not df.empty:
+        temp_img_path = "temp.jpg"
+        cv2.imwrite(temp_img_path, face_cropped)
+        try:
+            result = DeepFace.find(img_path=temp_img_path, db_path=db_path, enforce_detection=False)
+        except Exception as e:
+            print("Detection failed:", e)
+            continue
 
-        # Face Recognition
-        matched_path = df.iloc[0]["identity"]
-        folder_path = os.path.dirname(matched_path)
-        person_ID = os.path.basename(folder_path)
-        print("Recognised Person:", person_ID)
-        formatted_time = (datetime.datetime.now()).strftime("%H:%M:%S")
-        
-        #Updates the CSV file
-        updation_Success = update_record(person_ID, formatted_time)
-        cv2.putText(frame_flipped, updation_Success, (0, frame_flipped.shape[0]-10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,255,0), 1)
-        print(updation_Success)
+        if len(result)>0:
+            df = result[0]
+        if not df.empty:
 
-        #Drawing a box and displaying the name of the person
-        face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades+"haarcascade_frontalface_default.xml")
-        gray = cv2.cvtColor(frame_flipped, cv2.COLOR_BGR2GRAY)
-        faces = face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5)
+            #Face Recognition
+            matched_path = df.iloc[0]["identity"]
+            folder_path = os.path.dirname(matched_path)
+            person_ID = os.path.basename(folder_path)
+            print("Recognised person: ",  person_ID)
+            formatted_time = (datetime.datetime.now()).strftime("%H:%M:%S")
 
-        for (x,y,w,h) in faces:
-            #Draw a rectangle around the persons face
+            # Updates CSV file
+            updation_Success = update_record(person_ID, formatted_time)
+            cv2.putText(frame_flipped, updation_Success, (0, frame_flipped.shape[0]-10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,255,0), 1)
+            print(updation_Success)
+
+            #Draw a rectangle and display their name
             cv2.rectangle(frame_flipped, (x,y), (x+w, y+h), (0,0,255), 2)
-
-            #Display the name of the person detected above the rectangle
             cv2.putText(frame_flipped, person_ID, (x,y-10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0,0,255), 2)
-            break
+        else:
+            cv2.rectangle(frame_flipped, (x,y), (x+w, y+h), (0,0,255), 2)
+            cv2.putText(frame_flipped, "Unknown", (x,y-10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0,0,255), 2)
 
-    else:
-        print("Standby")
-        cv2.putText(frame_flipped, "Waiting for a Face", (0, 35), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0,0), 2)
 
 initcheck() 
 
