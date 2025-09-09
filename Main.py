@@ -94,7 +94,7 @@ cap = cv2.VideoCapture(0)
 while True:
 
     success, frame = cap.read() #Read the webcam
-    if not success:
+    if not success: #If webcam doesn't work print appropriate messages
         print("Webcam Not responding")
         break
     
@@ -105,7 +105,7 @@ while True:
     cv2.imwrite(temp_img_path, frame_flipped)
 
     Face_recognition() #Calls the face recognition
-
+    
     # displays q to quit
     cv2.putText(frame_flipped, "'q' to quit", (frame_flipped.shape[1]-125,25), cv2.FONT_HERSHEY_COMPLEX, 0.7, (0,0,0), 1)
 
