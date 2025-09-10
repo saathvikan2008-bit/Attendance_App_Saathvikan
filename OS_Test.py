@@ -3,7 +3,7 @@ import os
 cwd = (os.getcwd())
 
 print(type(cwd))
-
+print(os.listdir(cwd+"/RegisteredFaces"))
 
 def initcheck():
     dir_list = os.listdir(cwd)
