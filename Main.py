@@ -38,8 +38,7 @@ def update_record(ID, Time):
         current_record.seek(0)
         object_reader = csv.reader(current_record)
         for rows in object_reader:
-            if rows[1] == ID:
-                print("Duplicate record")
+            if rows[1] == ID:                
                 cv2.putText(frame_final, "Duplicate", (0,frame_final.shape[0]-10), cv2.FONT_HERSHEY_COMPLEX, 0.5, (0,255,0), 1)
                 return "Duplicate"
             else:
@@ -110,9 +109,9 @@ def Face_recognition_thread():
                 data_lock.release()
         time.sleep(0.01)
 
-
+#Loads the Haarcascademodel
 face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades+"haarcascade_frontalface_default.xml") #Loads the Haarcascademodel
-db_path = cwd+"/RegisteredFaces"
+db_path = cwd+"/RegisteredFaces" #Photo Database path
 initcheck() 
 
 #Initialize Webcam
@@ -123,7 +122,7 @@ facerec_thread = threading.Thread(target=Face_recognition_thread)
 facerec_thread.daemon = True #So thread exits when main program quits
 facerec_thread.start()
 
-#Main Loop
+#Main Thread
 while True:
 
     success, frame = cap.read() #Read the webcam
