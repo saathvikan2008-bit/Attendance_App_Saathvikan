@@ -1,13 +1,31 @@
+import cv2
 import tkinter as tk
+from PIL import Image, ImageTk
 
-# Create the main window
+def update_frame():
+    ret, frame = cap.read()
+    frame = cv2.flip(frame, 1)
+    if ret:
+        frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        img_pil = Image.fromarray(frame_rgb)
+        img_tk = ImageTk.PhotoImage(image=img_pil)
+        label.imgtk = img_tk
+        label.configure(image=img_tk)
+    window.after(30, update_frame)
+
+def on_closing():
+    cap.release()
+    cv2.destroyAllWindows()
+    window.destroy()
+
 window = tk.Tk()
-window.title("My First Tkinter App")
-window.geometry("500x500")
+window.title("Video in Tkinter")
 
-# Add a label widget
-label = tk.Label(window, text="Hello, Tkinter!", font=("Arial", 18))
-label.pack(pady=20)
+label = tk.Label(window)
+label.pack()
 
-# Run the GUI event loop
+cap = cv2.VideoCapture(0)
+
+window.protocol("WM_DELETE_WINDOW", on_closing)
+window.after(0, update_frame)
 window.mainloop()

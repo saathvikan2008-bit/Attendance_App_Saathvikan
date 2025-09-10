@@ -21,11 +21,8 @@ while True:
 
     c.putText(frame_flipped, "'q' to quit", (frame_flipped.shape[1]-125,25), c.FONT_HERSHEY_COMPLEX, 0.7, (0,0,0), 1)
     
-    label = tk.Label(window, image=frame_flipped)
-    label.pack()
     c.imshow("Faces Boxes", frame_flipped)
     if c.waitKey(1) & 0xFF == ord("q"):
         break
-window.mainloop()
 cap.release()
 c.destroyAllWindows()
