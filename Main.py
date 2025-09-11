@@ -6,8 +6,7 @@ import datetime
 import threading
 import time
 
-
-cwd = os.getcwd() # Gets the current working directory
+current_dir = os.path.dirname(os.path.realpath(__file__))
 
 #Global Variables
 frame_flipped = None
@@ -18,20 +17,20 @@ recognised_faces = list()
 
 #Function to check if all required Directories are present and if not present, create them
 def initcheck():
-    dir_list = os.listdir(cwd)
+    dir_list = os.listdir(current_dir)
     #print(dir_list)
     if "Records" not in dir_list:
         print("Records folder not Present, creating records folder")
-        os.mkdir(cwd+"/Records")
+        os.mkdir(current_dir+"/Records")
     if "RegisteredFaces" not in dir_list:
         print("RegisteredFaces folder not present, creating directory")
-        os.mkdir(cwd+'/RegisteredFaces')
+        os.mkdir(current_dir+'/RegisteredFaces')
 
 # Function to Store the attendance information in a csv file 'For Testing Purposes only'
 def update_record(ID, Time):
     now_date = datetime.date.today()
     now_date_string = now_date.strftime("%Y-%m-%d")
-    CSVfile_location = cwd + '/Records'
+    CSVfile_location = current_dir + '/Records'
     with open(CSVfile_location + "/" + now_date_string + ".csv", "a+", newline="") as current_record:
         object_writer = csv.writer(current_record)
 
@@ -70,14 +69,13 @@ def Face_recognition_thread():
         frame_copy = frame_flipped
         frame_lock.release()
 
-
         gray = cv2.cvtColor(frame_copy, cv2.COLOR_BGR2GRAY)
         faces = face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5)
 
         for (x,y,w,h) in faces:
             face_cropped = frame_copy[y:y+h, x:x+w]
 
-            temp_img_path = cwd+"/temp.jpg"
+            temp_img_path = current_dir+"/temp.jpg"
             cv2.imwrite(temp_img_path, face_cropped)
             try:
                 result = DeepFace.find(img_path=temp_img_path, db_path=db_path, enforce_detection=False)
@@ -111,7 +109,7 @@ def Face_recognition_thread():
 
 #Loads the Haarcascademodel
 face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades+"haarcascade_frontalface_default.xml") #Loads the Haarcascademodel
-db_path = cwd+"/RegisteredFaces" #Photo Database path
+db_path = current_dir+"/RegisteredFaces" #Photo Database path
 initcheck() 
 
 #Initialize Webcam
@@ -174,3 +172,4 @@ tempimgdel(temp_img_path)
 facerec_thread.join()
 cap.release()
 cv2.destroyAllWindows()
+

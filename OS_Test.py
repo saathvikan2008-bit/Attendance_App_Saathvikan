@@ -15,4 +15,5 @@ def initcheck():
         print("RegisteredFaces folder not present, creating directory")
         os.mkdir(cwd+'/RegisteredFaces')
 
-initcheck()
+dirname = os.path.dirname(os.path.realpath(__file__))
+print(dirname)
