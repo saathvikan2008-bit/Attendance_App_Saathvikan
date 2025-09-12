@@ -14,6 +14,8 @@ frame_lock = threading.Lock()
 stop = False
 data_lock = threading.Lock()
 recognised_faces = list()
+pause_recognition = False
+capture_image = False
 
 #Function to check if all required Directories are present and if not present, create them
 def initcheck():
@@ -23,7 +25,7 @@ def initcheck():
         print("Records folder not Present, creating records folder")
         os.mkdir(current_dir+"/Records")
     if "RegisteredFaces" not in dir_list:
-        print("RegisteredFaces folder not present, creating directory")
+        print("RegisteredFaces folder not present, creating RegisteredFaces folder")
         os.mkdir(current_dir+'/RegisteredFaces')
 
 # Function to Store the attendance information in a csv file 'For Testing Purposes only'
@@ -54,11 +56,39 @@ def tempimgdel(path):
     elif os.path.exists(path) == False:
         print("Temp file does not Exist, Quitting")
 
+def addNew():
+    global frame_flipped, pause_recognition, capture_image
+    pause_recognition = True
+    ID = input("Enter ID: ")
+    place = (f"{current_dir}/RegisteredFaces/{ID}")
+    os.mkdir(place)
+    capture_image = False
+    while True:
+        frame_lock.acquire()
+        if frame_flipped is None:
+            frame_lock.release()
+            time.sleep(0.05)
+            continue
+        
+        frame_local = frame_flipped
+        frame_lock.release()
+        if capture_image == True:
+            cv2.imwrite(f"{place}/{ID}.jpg", frame_local)
+            print("Image saved successfully")
+            capture_image = False
+            break
+
+    pause_recognition = False
+
 #A function that uses haarcascades to crop the image and deepface performs face recognition on that cropped image
 def Face_recognition_thread():
 
-    global frame_flipped, stop
+    global frame_flipped, stop, pause_recognition
     while not stop:
+        if pause_recognition:
+            time.sleep(0.1)
+            recognised_faces.clear()
+            continue
         frame_lock.acquire()
         if frame_flipped is None:
             frame_lock.release()
@@ -153,7 +183,7 @@ while True:
         #Updates CSV file
         updation_Success = update_record(text, formatted_time)
         cv2.putText(frame_flipped, updation_Success, (0, frame_flipped.shape[0]-10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,255,0), 1)
-        print(updation_Success)
+        if updation_Success == 'Record Added successfully': print(updation_Success)
     data_lock.release()
     
     # displays q to quit
@@ -163,8 +193,17 @@ while True:
     cv2.imshow("Display", frame_final)
     
     #Quit if "q" key is pressed
-    if cv2.waitKey(1) & 0xFF == ord('q'):
+    choice = cv2.waitKey(1)
+    if choice & 0xFF == ord('q'):
         break
+    elif choice & 0xFF == ord("n"):
+        addNew_thread = threading.Thread(target=addNew)
+        addNew_thread.daemon = True
+        addNew_thread.start()
+    elif (choice & 0xFF == 32):
+        if 'addNew_thread' in globals() and addNew_thread.is_alive():
+            capture_image = True
+
 
 #Close the Webcam and destroy all windows
 stop = True
