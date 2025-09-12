@@ -15,7 +15,7 @@ def Addnew():
         frame_flipped = cv2.flip(frame, 1)
         cv2.imshow("Window", frame_flipped)
 
-        if cv2.waitKey(1) & 0xFF == ord('e'):
+        if cv2.waitKey(1) == ord('e'):
             cv2.imwrite(f"{place}/test.jpg", frame_flipped)
             break
 

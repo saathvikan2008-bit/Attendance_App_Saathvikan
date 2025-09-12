@@ -58,6 +58,13 @@ def tempimgdel(path):
     elif os.path.exists(path) == False:
         print("Temp file does not Exist, Quitting")
 
+#A function to check if the input directory is valid
+def createDir(loc):
+    try:
+        os.mkdir(loc)
+    except FileExistsError:
+        print("User already exists, updating the user")
+
 # A function to add new users
 def addNew():
 
@@ -68,9 +75,7 @@ def addNew():
     capture_image = False
 
     ID = input("Enter ID: ")
-
     place = (f"{current_dir}/RegisteredFaces/{ID}")
-    os.mkdir(place)
     
     # Gets Coords for the image cropping
     frame_lock.acquire()
@@ -87,7 +92,12 @@ def addNew():
         frame_local = frame_flipped
         frame_lock.release()
         if capture_image == True:
+
+            #Crops the image
             imgtosave = frame_local[centre[1]-addNew_circle_radius:centre[1]+addNew_circle_radius, centre[0]-addNew_circle_radius:centre[0]+addNew_circle_radius]
+            
+            #Saves the image
+            createDir(place)
             cv2.imwrite(f"{place}/{ID}.jpg", imgtosave)
             print("Image saved successfully")
             capture_image = False
@@ -206,10 +216,10 @@ while True:
         cv2.circle(frame_final, (int(frame_final.shape[1]/2),int(frame_final.shape[0]/2)),addNew_circle_radius, (255,255,255), 1, cv2.LINE_AA)
         cv2.putText(frame_final, "Press 'Space' key to save", (0, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,0,0), 1)
 
- 
-    # displays q to quit
-    cv2.putText(frame_final, "'q' to quit", (frame_final.shape[1]-125,25), cv2.FONT_HERSHEY_COMPLEX, 0.7, (0,0,0), 1)
-
+    # displays q to quit and n to add new person
+    cv2.putText(frame_final, "'q' to quit", (frame_final.shape[1]-125,50), cv2.FONT_HERSHEY_COMPLEX, 0.7, (0,0,0), 1)
+    topText = "'n' to add new user" if not addNew_running else None
+    cv2.putText(frame_final, topText, (frame_final.shape[1]-240,25), cv2.FONT_HERSHEY_COMPLEX, 0.7, (0,0,0), 1)
     # Show webcam frame
     cv2.imshow("Display", frame_final)
     
@@ -231,4 +241,3 @@ tempimgdel(temp_img_path)
 facerec_thread.join()
 cap.release()
 cv2.destroyAllWindows()
-

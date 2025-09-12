@@ -22,7 +22,7 @@ window = tk.Tk()
 window.title("Video in Tkinter")
 
 label = tk.Label(window)
-label.pack()
+label.pack(side="left")
 
 cap = cv2.VideoCapture(0)
 

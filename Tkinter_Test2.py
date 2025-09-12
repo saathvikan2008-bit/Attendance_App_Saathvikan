@@ -2,6 +2,7 @@ import tkinter as tk
 
 root = tk.Tk()
 root.geometry("300x100")
+root.title("Test")
 
 entry = tk.Entry(root)
 entry.pack()

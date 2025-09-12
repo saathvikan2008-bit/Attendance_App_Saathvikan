@@ -24,5 +24,6 @@ while True:
     c.imshow("Faces Boxes", frame_flipped)
     if c.waitKey(1) & 0xFF == ord("q"):
         break
+
 cap.release()
 c.destroyAllWindows()
