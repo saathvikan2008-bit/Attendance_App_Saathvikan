@@ -16,6 +16,8 @@ data_lock = threading.Lock()
 recognised_faces = list()
 pause_recognition = False
 capture_image = False
+addNew_running = False
+addNew_circle_radius = 200
 
 #Function to check if all required Directories are present and if not present, create them
 def initcheck():
@@ -57,12 +59,19 @@ def tempimgdel(path):
         print("Temp file does not Exist, Quitting")
 
 def addNew():
-    global frame_flipped, pause_recognition, capture_image
+    global frame_flipped, pause_recognition, capture_image, addNew_running, addNew_circle_radius
+    addNew_running = True
     pause_recognition = True
     ID = input("Enter ID: ")
     place = (f"{current_dir}/RegisteredFaces/{ID}")
     os.mkdir(place)
     capture_image = False
+    
+    # Gets Coords for the image cropping
+    frame_lock.acquire()
+    frame_local = frame_flipped
+    centre = (int(frame_local.shape[1]/2), int(frame_local.shape[0]/2))
+    frame_lock.release()
     while True:
         frame_lock.acquire()
         if frame_flipped is None:
@@ -73,12 +82,14 @@ def addNew():
         frame_local = frame_flipped
         frame_lock.release()
         if capture_image == True:
-            cv2.imwrite(f"{place}/{ID}.jpg", frame_local)
+            imgtosave = frame_local[centre[1]-addNew_circle_radius:centre[1]+addNew_circle_radius, centre[0]-addNew_circle_radius:centre[0]+addNew_circle_radius]
+            cv2.imwrite(f"{place}/{ID}.jpg", imgtosave)
             print("Image saved successfully")
             capture_image = False
             break
 
     pause_recognition = False
+    addNew_running = False
 
 #A function that uses haarcascades to crop the image and deepface performs face recognition on that cropped image
 def Face_recognition_thread():
@@ -169,22 +180,26 @@ while True:
     frame_flipped = frame_final.copy()
     frame_lock.release()
 
-    #Gets data about the recognised person from the facerec_thread
-    data_lock.acquire()
-    for (x,y,w,h, personID, formatted_time) in recognised_faces:
-        cv2.rectangle(frame_final, (x,y), (x+w, y+h), (0,0,255), 2)
-        if personID is not None:
-            text = personID
-            cv2.putText(frame_final, text, (x,y-10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0,0,255), 2)
-        else:
-            text = "Unknown"
-            cv2.putText(frame_final, text, (x,y-10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0,0,255), 2)
+    if not addNew_running:
+        #Gets data about the recognised person from the facerec_thread
+        data_lock.acquire()
+        for (x,y,w,h, personID, formatted_time) in recognised_faces:
+            cv2.rectangle(frame_final, (x,y), (x+w, y+h), (0,0,255), 2)
+            if personID is not None:
+                text = personID
+                cv2.putText(frame_final, text, (x,y-10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0,0,255), 2)
+            else:
+                text = "Unknown"
+                cv2.putText(frame_final, text, (x,y-10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0,0,255), 2)
 
-        #Updates CSV file
-        updation_Success = update_record(text, formatted_time)
-        cv2.putText(frame_flipped, updation_Success, (0, frame_flipped.shape[0]-10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,255,0), 1)
-        if updation_Success == 'Record Added successfully': print(updation_Success)
-    data_lock.release()
+            #Updates CSV file
+            updation_Success = update_record(text, formatted_time)
+            cv2.putText(frame_flipped, updation_Success, (0, frame_flipped.shape[0]-10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,255,0), 1)
+            if updation_Success == 'Record Added successfully': print(updation_Success)
+        data_lock.release()
+    elif addNew_running:
+        cv2.circle(frame_final, (int(frame_final.shape[1]/2),int(frame_final.shape[0]/2)),200, (255,255,255), 1, lineType=1 )
+
     
     # displays q to quit
     cv2.putText(frame_final, "'q' to quit", (frame_final.shape[1]-125,25), cv2.FONT_HERSHEY_COMPLEX, 0.7, (0,0,0), 1)
