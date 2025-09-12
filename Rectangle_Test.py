@@ -20,7 +20,7 @@ while True:
         c.putText(frame_flipped, "Person", (x,y-10), c.FONT_HERSHEY_SIMPLEX, 1.0, (0,0,255), 1)
 
     c.putText(frame_flipped, "'q' to quit", (frame_flipped.shape[1]-125,25), c.FONT_HERSHEY_COMPLEX, 0.7, (0,0,0), 1)
-    
+
     c.imshow("Faces Boxes", frame_flipped)
     if c.waitKey(1) & 0xFF == ord("q"):
         break

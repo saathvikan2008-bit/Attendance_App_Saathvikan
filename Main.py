@@ -17,7 +17,7 @@ recognised_faces = list()
 pause_recognition = False
 capture_image = False
 addNew_running = False
-addNew_circle_radius = 200
+addNew_circle_radius = 175
 
 #Function to check if all required Directories are present and if not present, create them
 def initcheck():
@@ -58,14 +58,19 @@ def tempimgdel(path):
     elif os.path.exists(path) == False:
         print("Temp file does not Exist, Quitting")
 
+# A function to add new users
 def addNew():
+
     global frame_flipped, pause_recognition, capture_image, addNew_running, addNew_circle_radius
+
     addNew_running = True
     pause_recognition = True
+    capture_image = False
+
     ID = input("Enter ID: ")
+
     place = (f"{current_dir}/RegisteredFaces/{ID}")
     os.mkdir(place)
-    capture_image = False
     
     # Gets Coords for the image cropping
     frame_lock.acquire()
@@ -198,9 +203,10 @@ while True:
             if updation_Success == 'Record Added successfully': print(updation_Success)
         data_lock.release()
     elif addNew_running:
-        cv2.circle(frame_final, (int(frame_final.shape[1]/2),int(frame_final.shape[0]/2)),200, (255,255,255), 1, lineType=1 )
+        cv2.circle(frame_final, (int(frame_final.shape[1]/2),int(frame_final.shape[0]/2)),addNew_circle_radius, (255,255,255), 1, cv2.LINE_AA)
+        cv2.putText(frame_final, "Press 'Space' key to save", (0, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,0,0), 1)
 
-    
+ 
     # displays q to quit
     cv2.putText(frame_final, "'q' to quit", (frame_final.shape[1]-125,25), cv2.FONT_HERSHEY_COMPLEX, 0.7, (0,0,0), 1)
 
@@ -218,7 +224,6 @@ while True:
     elif (choice & 0xFF == 32):
         if 'addNew_thread' in globals() and addNew_thread.is_alive():
             capture_image = True
-
 
 #Close the Webcam and destroy all windows
 stop = True
