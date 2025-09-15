@@ -25,17 +25,17 @@ def initcheck():
     #print(dir_list)
     if "Records" not in dir_list:
         print("Records folder not Present, creating records folder")
-        os.mkdir(current_dir+"/Records")
+        os.mkdir(os.path.join(current_dir, 'Records'))
     if "RegisteredFaces" not in dir_list:
         print("RegisteredFaces folder not present, creating RegisteredFaces folder")
-        os.mkdir(current_dir+'/RegisteredFaces')
+        os.mkdir(os.path.join(current_dir, 'RegisteredFaces'))
 
 # Function to Store the attendance information in a csv file 'For Testing Purposes only'
 def update_record(ID, Time):
     now_date = datetime.date.today()
     now_date_string = now_date.strftime("%Y-%m-%d")
-    CSVfile_location = current_dir + '/Records'
-    with open(CSVfile_location + "/" + now_date_string + ".csv", "a+", newline="") as current_record:
+    CSVfile_location = os.path.join(current_dir, 'Records')
+    with open(os.path.join(CSVfile_location, now_date_string) + '.csv', "a+", newline="") as current_record:
         object_writer = csv.writer(current_record)
 
         current_record.seek(0)
@@ -75,7 +75,7 @@ def addNew():
     capture_image = False
 
     ID = input("Enter ID: ")
-    place = (f"{current_dir}/RegisteredFaces/{ID}")
+    place = os.path.join(current_dir, 'RegisteredFaces', ID)
     
     # Gets Coords for the image cropping
     frame_lock.acquire()
@@ -96,9 +96,9 @@ def addNew():
             #Crops the image
             imgtosave = frame_local[centre[1]-addNew_circle_radius:centre[1]+addNew_circle_radius, centre[0]-addNew_circle_radius:centre[0]+addNew_circle_radius]
             
-            #Saves the image
+            #Saves the cropped image
             createDir(place)
-            cv2.imwrite(f"{place}/{ID}.jpg", imgtosave)
+            cv2.imwrite(os.path.join(place, f"{ID}.jpg"), imgtosave)
             print("Image saved successfully")
             capture_image = False
             break
@@ -131,7 +131,7 @@ def Face_recognition_thread():
         for (x,y,w,h) in faces:
             face_cropped = frame_copy[y:y+h, x:x+w]
 
-            temp_img_path = current_dir+"/temp.jpg"
+            temp_img_path = os.path.join(current_dir, 'temp.jpg')
             cv2.imwrite(temp_img_path, face_cropped)
             try:
                 result = DeepFace.find(img_path=temp_img_path, db_path=db_path, enforce_detection=False)
@@ -165,7 +165,7 @@ def Face_recognition_thread():
 
 #Loads the Haarcascademodel
 face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades+"haarcascade_frontalface_default.xml") #Loads the Haarcascademodel
-db_path = current_dir+"/RegisteredFaces" #Photo Database path
+db_path = os.path.join(current_dir, 'RegisteredFaces')#Photo Database path
 initcheck() 
 
 #Initialize Webcam
@@ -187,7 +187,7 @@ while True:
     frame_final = cv2.flip(frame, 1) #Flips the frame along the vertical axis
 
     # Save current frame temporarily
-    temp_img_path = "temp.jpg"
+    temp_img_path = os.path.join(current_dir, "temp.jpg")
     cv2.imwrite(temp_img_path, frame_final)
 
     #To share the frame with the facerec_thread safely without any obstructions
