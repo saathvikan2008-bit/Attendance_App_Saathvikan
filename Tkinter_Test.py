@@ -20,6 +20,8 @@ def on_closing():
 
 window = tk.Tk()
 window.title("Video in Tkinter")
+window.geometry('1000x498')
+window.resizable(0,0)
 
 label = tk.Label(window)
 label.pack(side="left")
