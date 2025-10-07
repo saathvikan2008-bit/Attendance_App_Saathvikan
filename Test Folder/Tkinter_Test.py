@@ -6,13 +6,14 @@ def update_frame():
     ret, frame = cap.read()
     frame = cv2.flip(frame, 1)
     if ret:
+        cv2.putText(frame, '**Database is Empty**', (0,50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,0,255), 1)
         frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         img_pil = Image.fromarray(frame_rgb)
         img_tk = ImageTk.PhotoImage(image=img_pil)
         label.imgtk = img_tk
         label.configure(image=img_tk)
     window.after(30, update_frame)
-
+    
 def on_closing():
     cap.release()
     cv2.destroyAllWindows()

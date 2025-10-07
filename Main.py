@@ -18,6 +18,7 @@ pause_recognition = False
 capture_image = False
 addNew_running = False
 addNew_circle_radius = 175
+addNew_circle_center = None
 
 #Function to check if all required Directories are present and if not present, create them
 def initcheck():
@@ -65,22 +66,29 @@ def createDir(loc):
     except FileExistsError:
         print("User already exists, updating the user")
 
+#Function to Check if the database is empty or not
+def IsDatabaseEmpty():
+    if len(os.listdir(db_path)) <= 1:
+        return True
+    else:
+        return False
+
 # A function to add new users
 def addNew():
 
-    global frame_flipped, pause_recognition, capture_image, addNew_running, addNew_circle_radius
+    global frame_flipped, pause_recognition, capture_image, addNew_running, addNew_circle_radius,  addNew_circle_center
 
     addNew_running = True
     pause_recognition = True
     capture_image = False
-
+    addNew_circle_center = (int(frame_final.shape[1]/2),int(frame_final.shape[0]/2)+30)
     ID = input("Enter ID: ")
     place = os.path.join(current_dir, 'RegisteredFaces', ID)
     
     # Gets Coords for the image cropping
     frame_lock.acquire()
     frame_local = frame_flipped
-    centre = (int(frame_local.shape[1]/2), int(frame_local.shape[0]/2))
+    centre = addNew_circle_center
     frame_lock.release()
     while True:
         frame_lock.acquire()
@@ -128,6 +136,9 @@ def Face_recognition_thread():
         gray = cv2.cvtColor(frame_copy, cv2.COLOR_BGR2GRAY)
         faces = face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5)
 
+        data_lock.acquire()
+        recognised_faces.clear()
+
         for (x,y,w,h) in faces:
             face_cropped = frame_copy[y:y+h, x:x+w]
 
@@ -139,10 +150,8 @@ def Face_recognition_thread():
                 print("Detection failed: ", e)
                 continue
 
-            if len(result)>0:
+            if len(result)>0 and not result[0].empty:
                 df = result[0]
-                
-            if not df.empty:
 
                 #Face Recognition
                 matched_path = df.iloc[0]["identity"]
@@ -150,21 +159,17 @@ def Face_recognition_thread():
                 person_ID = os.path.basename(folder_path)
                 print("Recognised person: ",  person_ID)
                 formatted_time = (datetime.datetime.now()).strftime("%H:%M:%S")
-
-                #Shares Data about the recognised person to main thread
-                data_lock.acquire()
-                recognised_faces.clear()
-                for (x,y,w,h) in faces:
-                    recognised_faces.append((x,y,w,h,person_ID, formatted_time))
-                data_lock.release()
+                recognised_faces.append((x,y,w,h,person_ID, formatted_time))
             else:
-                data_lock.acquire()
-                recognised_faces.clear()
-                data_lock.release()
+                recognised_faces.append((x,y,w,h,None,None))
+
+        data_lock.release()
+
         time.sleep(0.01)
 
 #Loads the Haarcascademodel
 face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades+"haarcascade_frontalface_default.xml") #Loads the Haarcascademodel
+
 db_path = os.path.join(current_dir, 'RegisteredFaces')#Photo Database path
 initcheck() 
 
@@ -208,18 +213,24 @@ while True:
                 cv2.putText(frame_final, text, (x,y-10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0,0,255), 2)
 
             #Updates CSV file
-            updation_Success = update_record(text, formatted_time)
-            cv2.putText(frame_flipped, updation_Success, (0, frame_flipped.shape[0]-10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,255,0), 1)
-            if updation_Success == 'Record Added successfully': print(updation_Success)
+            if text != 'Unknown':
+                updation_Success = update_record(text, formatted_time)
+                cv2.putText(frame_flipped, updation_Success, (0, frame_flipped.shape[0]-10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,255,0), 1)
+                if updation_Success == 'Record Added successfully':
+                    print(updation_Success)
         data_lock.release()
     elif addNew_running:
-        cv2.circle(frame_final, (int(frame_final.shape[1]/2),int(frame_final.shape[0]/2)),addNew_circle_radius, (255,255,255), 1, cv2.LINE_AA)
-        cv2.putText(frame_final, "Press 'Space' key to save", (0, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,0,0), 1)
+        cv2.circle(frame_final, addNew_circle_center ,addNew_circle_radius, (255,255,255), 1, cv2.LINE_AA)
+        cv2.putText(frame_final, "Enter your name and Press 'Space' to save", (0, 78), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0,0,0), 1)
 
     # displays q to quit and n to add new person
     cv2.putText(frame_final, "'q' to quit", (frame_final.shape[1]-125,50), cv2.FONT_HERSHEY_COMPLEX, 0.7, (0,0,0), 1)
     topText = "'n' to add new user" if not addNew_running else None
     cv2.putText(frame_final, topText, (frame_final.shape[1]-240,25), cv2.FONT_HERSHEY_COMPLEX, 0.7, (0,0,0), 1)
+    
+    if IsDatabaseEmpty():
+        cv2.putText(frame_final, '**Database is Empty**', (10,30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,0,255), 2)
+
     # Show webcam frame
     cv2.imshow("Display", frame_final)
     
