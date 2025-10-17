@@ -6,6 +6,7 @@ import datetime
 from tkinter import messagebox
 from PIL import Image, ImageTk
 import customtkinter as ctk
+import shutil
 
 
 current_dir = os.path.dirname(os.path.realpath(__file__))
@@ -29,17 +30,19 @@ class MainApp:
         self.Title = ctk.CTkLabel(root, text="Face Recognition System", font=("Arial", 50))
         self.start_btn = ctk.CTkButton(root, text = "Start Recognition", font=("Arial", 18), height=50, width=250, command=self.open_recognition_window)
         self.addnew_btn = ctk.CTkButton(root, text = "Add new User", font = ("Arial", 18), height=50, width=250, command = self.open_addnew_window)
+        self.remove_user_btn = ctk.CTkButton(root, text = 'Remove User', font = ("Arial", 18), height=50, width=250, command=self.remove_user)
         self.exit_btn = ctk.CTkButton(root, text='Exit', font = ("Arial", 18), height=50, width=250, command=root.destroy)
         
         self.root.grid_columnconfigure(0,weight = 1)
         self.root.grid_columnconfigure(2,weight = 1)
         self.root.grid_rowconfigure(1, weight = 1)
-        self.root.grid_rowconfigure(5, weight = 1)
+        self.root.grid_rowconfigure(6, weight = 1)
 
         self.Title.grid(row = 0, column = 1, pady = 10)
         self.start_btn.grid(row = 2, column = 1, pady = 10)
         self.addnew_btn.grid(row = 3, column = 1, pady = 10)
-        self.exit_btn.grid(row = 4, column = 1, pady = 10)
+        self.remove_user_btn.grid(row = 4, column = 1, pady = 10)
+        self.exit_btn.grid(row = 5, column = 1, pady = 10)
 
     def open_recognition_window(self):
         if not os.listdir(db_path):
@@ -49,6 +52,23 @@ class MainApp:
 
     def open_addnew_window(self):
         AddNew(self.root)
+    
+    def remove_user(self):
+        self.dialog = ctk.CTkInputDialog(text = 'Enter the User to be removed', title='Remove User')
+        self.user_id_to_remove = self.dialog.get_input()
+        if self.user_id_to_remove:
+            self.user_path = os.path.join(db_path, self.user_id_to_remove)
+
+            if os.path.isdir(self.user_path):
+                self.confirm = messagebox.askyesno("Confirm Deletion", f"Are you sure you want to permanently remove user '{self.user_id_to_remove}'?")
+                if self.confirm:
+                    try:
+                        shutil.rmtree(self.user_path)
+                        messagebox.showinfo("Success", f"User '{self.user_id_to_remove}' has been removed.")
+                    except Exception:
+                        messagebox.showerror("Error", "Something went wrong, try again")
+            else:
+                messagebox.showerror("User Not Found", f"'{self.user_id_to_remove}' doesn't exist.")
 
     def enable_addnew_button(self):
         self.addnew_btn.configure(state = 'normal')   
@@ -70,7 +90,7 @@ class RecognitionWindow:
         self.top.geometry('800x600')
         self.video_label = ctk.CTkLabel(self.top, text='')
         self.video_label.pack(padx = 10, pady = 10)
-        self.status_label = ctk.CTkLabel(self.top, text='Status:Online', font = ("Arial", 12))
+        self.status_label = ctk.CTkLabel(self.top, text='Status:Online', font = ("Arial", 16))
         self.status_label.pack()
         self.close_button = ctk.CTkButton(self.top, text='Close', command=self.close)
         self.close_button.pack(pady = 10)
@@ -140,7 +160,6 @@ class RecognitionWindow:
         with open(csv_path, 'a', newline='') as f:
             writer = csv.writer(f)
             writer.writerow([datetime.datetime.now().strftime("%H:%M:%S"), name])
-
 
 class AddNew:
     def __init__(self, parent):
