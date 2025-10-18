@@ -18,6 +18,8 @@ os.makedirs(records_dir, exist_ok=True)
 
 ctk.set_appearance_mode("dark")
 ctk.set_default_color_theme("green")
+
+logo = 'Bitmaps/logo_new.ico'
 class MainApp:
 
     def __init__(self, root):
@@ -25,9 +27,26 @@ class MainApp:
         self.root.title("Attendance App")
         self.root.geometry("800x600")
         self.root.resizable(0,0)
-        self.root.iconbitmap('logo.ico')
+        try:
+            self.root.iconbitmap(logo)
+        except Exception:
+            print("Logo Not found")
 
-        self.Title = ctk.CTkLabel(root, text="Face Recognition System", font=("Arial", 50))
+        header_frame = ctk.CTkFrame(root, fg_color="transparent")
+        header_frame.grid(row = 0, column = 1, pady=(40,40), sticky = 's')
+        header_frame.grid_columnconfigure(0, weight = 0)
+        header_frame.grid_columnconfigure(1, weight = 0)
+
+        try:
+            logo_image = ctk.CTkImage(Image.open('Bitmaps/logobg_removed.png'), size=(48,48))
+            self.logo_label = ctk.CTkLabel(header_frame, text='', image=logo_image)
+            self.logo_label.grid(row = 0, column = 0, padx=(0,10))
+        except Exception:
+            self.logo_label = ctk.CTkLabel(root, text='')
+        
+        self.Title = ctk.CTkLabel(header_frame, text="Face Recognition System", font=("Arial", 50))
+        self.Title.grid(row = 0, column = 1)
+
         self.start_btn = ctk.CTkButton(root, text = "Start Recognition", font=("Arial", 18), height=50, width=250, command=self.open_recognition_window)
         self.addnew_btn = ctk.CTkButton(root, text = "Add new User", font = ("Arial", 18), height=50, width=250, command = self.open_addnew_window)
         self.remove_user_btn = ctk.CTkButton(root, text = 'Remove User', font = ("Arial", 18), height=50, width=250, command=self.remove_user)
@@ -38,7 +57,6 @@ class MainApp:
         self.root.grid_rowconfigure(1, weight = 1)
         self.root.grid_rowconfigure(6, weight = 1)
 
-        self.Title.grid(row = 0, column = 1, pady = 10)
         self.start_btn.grid(row = 2, column = 1, pady = 10)
         self.addnew_btn.grid(row = 3, column = 1, pady = 10)
         self.remove_user_btn.grid(row = 4, column = 1, pady = 10)
@@ -85,7 +103,8 @@ class MainApp:
 class RecognitionWindow:
     def __init__(self, parent):
         self.top = ctk.CTkToplevel(parent)
-        self.top.iconbitmap('logo.ico')
+        self.top.after(250, lambda:self.top.iconbitmap(logo))
+        #self.top.iconbitmap(logo)
         self.top.title("Face Recognition")
         self.top.geometry('800x600')
         self.video_label = ctk.CTkLabel(self.top, text='')
@@ -166,7 +185,8 @@ class AddNew:
         self.running = True
         self.circleradius = 175
         self.window = ctk.CTkToplevel(parent)
-        self.window.iconbitmap('logo.ico')
+        self.window.after(250, lambda:self.window.iconbitmap(logo))
+        #self.window.iconbitmap(logo)
         self.window.title("Add New User")
         self.window.geometry("900x600")
         self.window.resizable(True, True)
@@ -176,7 +196,8 @@ class AddNew:
         self.name_label = ctk.CTkLabel(self.window, text='ID:', font=("Arial", 14))
         self.name_entry = ctk.CTkEntry(self.window, textvariable=self.name_var, font=("Arial", 10))
         self.save_btn = ctk.CTkButton(self.window, text = 'Confirm', command = self.imagesave)
-
+        self.name_entry.bind("<Return>", self.enterkeypressed)
+        
         self.window.grid_columnconfigure(0, weight=0)
         self.window.grid_rowconfigure(1, weight=1)
         self.window.grid_rowconfigure(2, weight=1)
@@ -194,6 +215,8 @@ class AddNew:
         self.update_frame_addnew()
         self.window.protocol("WM_DELETE_WINDOW", self.close)
 
+    def enterkeypressed(self, event):
+        self.imagesave()
     def close(self):
         self.running = False
     
