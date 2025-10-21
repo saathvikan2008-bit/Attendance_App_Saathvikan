@@ -6,6 +6,7 @@ import datetime
 import threading
 import time
 
+
 current_dir = os.path.dirname(os.path.realpath(__file__))
 
 #Global Variables

@@ -8,7 +8,6 @@ from PIL import Image, ImageTk
 import customtkinter as ctk
 import shutil
 
-
 current_dir = os.path.dirname(os.path.realpath(__file__))
 db_path = os.path.join(current_dir,"RegisteredFaces")
 records_dir = os.path.join(current_dir,"Records")
@@ -26,7 +25,7 @@ class MainApp:
         self.root = root
         self.root.title("Attendance App")
         self.root.geometry("800x600")
-        self.root.resizable(0,0)
+        self.root.resizable(False,False)
         try:
             self.root.iconbitmap(logo)
         except Exception:
@@ -38,29 +37,31 @@ class MainApp:
         header_frame.grid_columnconfigure(1, weight = 0)
 
         try:
-            logo_image = ctk.CTkImage(Image.open('Bitmaps/logobg_removed.png'), size=(48,48))
+            logo_image = ctk.CTkImage(Image.open('Bitmaps/logobg_removed.png'), size=(52,52))
             self.logo_label = ctk.CTkLabel(header_frame, text='', image=logo_image)
             self.logo_label.grid(row = 0, column = 0, padx=(0,10))
         except Exception:
             self.logo_label = ctk.CTkLabel(root, text='')
         
-        self.Title = ctk.CTkLabel(header_frame, text="Face Recognition System", font=("Arial", 50))
+        self.Title = ctk.CTkLabel(header_frame, text="Face Recognition System", font=("Calibri", 60, 'bold'))
         self.Title.grid(row = 0, column = 1)
 
         self.start_btn = ctk.CTkButton(root, text = "Start Recognition", font=("Arial", 18), height=50, width=250, command=self.open_recognition_window)
         self.addnew_btn = ctk.CTkButton(root, text = "Add new User", font = ("Arial", 18), height=50, width=250, command = self.open_addnew_window)
+        self.viewrecords_btn = ctk.CTkButton(root, text='View Records', font=("Arial", 18), height=50, width=250, command=self.open_viewrecords_window)
         self.remove_user_btn = ctk.CTkButton(root, text = 'Remove User', font = ("Arial", 18), height=50, width=250, command=self.remove_user)
         self.exit_btn = ctk.CTkButton(root, text='Exit', font = ("Arial", 18), height=50, width=250, command=root.destroy)
         
         self.root.grid_columnconfigure(0,weight = 1)
         self.root.grid_columnconfigure(2,weight = 1)
         self.root.grid_rowconfigure(1, weight = 1)
-        self.root.grid_rowconfigure(6, weight = 1)
+        self.root.grid_rowconfigure(7, weight = 1)
 
         self.start_btn.grid(row = 2, column = 1, pady = 10)
         self.addnew_btn.grid(row = 3, column = 1, pady = 10)
-        self.remove_user_btn.grid(row = 4, column = 1, pady = 10)
-        self.exit_btn.grid(row = 5, column = 1, pady = 10)
+        self.viewrecords_btn.grid(row = 4, column = 1, pady = 10)
+        self.remove_user_btn.grid(row = 5, column = 1, pady = 10)
+        self.exit_btn.grid(row = 6, column = 1, pady = (40,10))
 
     def open_recognition_window(self):
         if not os.listdir(db_path):
@@ -70,6 +71,9 @@ class MainApp:
 
     def open_addnew_window(self):
         AddNew(self.root)
+
+    def open_viewrecords_window(self):
+        ViewRecords(self.root)
     
     def remove_user(self):
         self.dialog = ctk.CTkInputDialog(text = 'Enter the User to be removed', title='Remove User')
@@ -104,7 +108,6 @@ class RecognitionWindow:
     def __init__(self, parent):
         self.top = ctk.CTkToplevel(parent)
         self.top.after(250, lambda:self.top.iconbitmap(logo))
-        #self.top.iconbitmap(logo)
         self.top.title("Face Recognition")
         self.top.geometry('800x600')
         self.video_label = ctk.CTkLabel(self.top, text='')
@@ -186,7 +189,6 @@ class AddNew:
         self.circleradius = 175
         self.window = ctk.CTkToplevel(parent)
         self.window.after(250, lambda:self.window.iconbitmap(logo))
-        #self.window.iconbitmap(logo)
         self.window.title("Add New User")
         self.window.geometry("900x600")
         self.window.resizable(True, True)
@@ -254,6 +256,88 @@ class AddNew:
             app.enable_facerec_button()
             root.deiconify()
             self.window.destroy()        
+
+class ViewRecords:
+    def __init__(self, parent):
+        self.window = ctk.CTkToplevel(parent)
+        try:
+            self.window.after(250, lambda:self.window.iconbitmap(logo))
+        except Exception as e:
+            print(f"Couldn't show logo: {e}")
+        self.window.title("Records")
+        self.window.protocol("WM_DELETE_WINDOW", self.close)
+        self.window.geometry('800x600')
+        root.iconify()
+        self.user_list = [i for i in os.listdir(db_path) if not i.endswith('.pkl')]
+        control_frame = ctk.CTkFrame(self.window)
+        control_frame.pack(padx = 10, pady = 10)
+
+        self.records_list = self.get_records()
+        self.selected_file = ctk.StringVar()
+
+        self.file_menu = ctk.CTkOptionMenu(control_frame, variable=self.selected_file, values=self.records_list if self.records_list else "No Records found", command=self.on_file_select)
+        self.file_menu.pack(side = 'left', padx = (0,10))
+
+        self.record_display = ctk.CTkTextbox(self.window, font=("Courier", 14), wrap = 'none', state = 'disabled')
+        self.record_display.pack(padx = 10, pady = (0,10), fill = 'both', expand = True)
+        self.record_display.tag_config("Present", foreground = "#40D51A")
+        self.record_display.tag_config("Absent", foreground = "#CD3232")
+
+        today_file_name = f"{datetime.date.today().strftime('%Y-%m-%d')}.csv"
+        if today_file_name in self.records_list:
+            self.selected_file.set(today_file_name)
+            self.load_csv_data(os.path.join(records_dir, today_file_name))
+        else:
+            self.record_display.insert("end", "No records found for today")
+
+
+    def get_records(self):
+        try:
+            return sorted([f for f in os.listdir(records_dir) if f.endswith('.csv')], reverse=True)       
+        except Exception:
+            return []
+
+    def on_file_select(self, choice):
+        file_path = os.path.join(records_dir, choice)
+        self.load_csv_data(file_path)
+        
+    def load_csv_data(self, file_path):
+        self.record_display.configure(state = 'normal')
+        self.record_display.delete("1.0", 'end')
+        try:
+            with open(file_path, 'r') as f:
+                reader = csv.reader(f)
+                header = f'Present:\n{"Time":<25}{'Name'}\n'
+                seperator = '='*45 + '\n'
+                self.record_display.insert('end', header)
+                self.record_display.insert('end', seperator)
+
+                present = []
+
+                for row in reader:
+                    if len(row)>=2:
+                        formatted_row = f'{row[0]:<25}{row[1]}\n'
+                        start_index = self.record_display.index('end-1c')
+                        self.record_display.insert("end", formatted_row)
+                        end_index = self.record_display.index('end-1c')
+                        self.record_display.tag_add("Present", start_index, end_index)
+                        present.append(row[1])
+
+                self.record_display.insert('end', '\n'+'*'*50+'\n'*2)
+                self.record_display.insert('end', "Absentees:\n")
+                absentees = [f for f in self.user_list if f not in present]
+                for absentee in absentees:
+                    start_index = self.record_display.index('end-1c')
+                    self.record_display.insert("end", absentee+'\n')
+                    end_index = self.record_display.index('end-1c')
+                    self.record_display.tag_add("Absent", start_index, end_index)
+        except Exception as e:
+            messagebox.showerror("Error!", e)
+        self.record_display.configure(state = 'disabled')
+
+    def close(self):
+        root.deiconify()
+        self.window.destroy()
 
 if __name__ == "__main__":
     root = ctk.CTk()

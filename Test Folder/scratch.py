@@ -1,17 +1,13 @@
-import numpy as np
-
-# Define two matrices
-matrix1 = np.array([[1, 0], [0, 1]])
-matrix2 = np.array([[5, 6], [7, 8]])
-
-# Perform matrix multiplication
-result = np.dot(matrix1, matrix2)
-r = np.cross
-
-# Display the result
-print("Matrix 1:")
-print(matrix1)
-print("\nMatrix 2:")
-print(matrix2)
-print("\nResult of Matrix Multiplication:")
-print(result)
+import customtkinter
+class MyFrame(customtkinter.CTkScrollableFrame):
+   def __init__(self, master, **kwargs):
+       super().__init__(master, **kwargs)
+       self.label = customtkinter.CTkLabel(self, text="Scrollable Frame")
+       self.label.grid(row=0, column=0, padx=20)
+class App(customtkinter.CTk):
+   def __init__(self):
+       super().__init__()
+       self.my_frame = MyFrame(master=self, width=300, height=200)
+       self.my_frame.grid(row=0, column=0, padx=20, pady=20)
+app = App()
+app.mainloop()
