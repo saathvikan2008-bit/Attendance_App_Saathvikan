@@ -1,9 +1,7 @@
-x = 5
+import customtkinter as ctk
 
-def add(y):
-    y+=4
-    print(y)
-    return y
-
-x = add(x)
-print(x)
+root = ctk.CTk()
+root.iconbitmap("Bitmaps/logo_new.ico")   # set the app icon
+dlg = ctk.CTkInputDialog(text="Enter ID", title="Remove User")
+result = dlg.get_input()
+print(result)

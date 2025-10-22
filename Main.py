@@ -90,7 +90,7 @@ class MainApp:
                     except Exception:
                         messagebox.showerror("Error", "Something went wrong, try again")
             else:
-                messagebox.showerror("User Not Found", f"'{self.user_id_to_remove}' doesn't exist.")
+                messagebox.showerror("User Not Found", f"'User {self.user_id_to_remove}' doesn't exist.")
 
     def enable_addnew_button(self):
         self.addnew_btn.configure(state = 'normal')   
@@ -307,7 +307,7 @@ class ViewRecords:
         try:
             with open(file_path, 'r') as f:
                 reader = csv.reader(f)
-                header = f'Present:\n{"Time":<25}{'Name'}\n'
+                header = f'Present:\n{"Time":<25}{"Name"}\n'
                 seperator = '='*45 + '\n'
                 self.record_display.insert('end', header)
                 self.record_display.insert('end', seperator)
