@@ -10,7 +10,6 @@ from mysql.connector import errorcode
 import numpy as np
 import json
 
-
 #Database Configuration
 DB_CONFIG = {'user' : 'root', 'password' : '123456', 'host' : 'localhost', 'database' : "face_recognition_db"}
 def get_db_connection():
