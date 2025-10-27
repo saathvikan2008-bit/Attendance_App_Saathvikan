@@ -9,6 +9,7 @@ import mysql.connector
 from mysql.connector import errorcode
 import numpy as np
 import json
+from scipy.spatial.distance import cosine
 
 #Database Configuration
 DB_CONFIG = {'user' : 'root', 'password' : '123456', 'host' : 'localhost', 'database' : "face_recognition_db"}
@@ -53,12 +54,8 @@ current_dir = os.path.dirname(os.path.realpath(__file__))
 db_path = os.path.join(current_dir,"RegisteredFaces")
 records_dir = os.path.join(current_dir,"Records")
 logo = 'Bitmaps/logo_new.ico'
-face_detection_threshold = 1.2
+face_detection_threshold = 0.4
 debug = False
-
-# Remove after adding MYSQL
-os.makedirs(db_path, exist_ok=True)
-os.makedirs(records_dir, exist_ok=True)
 
 ctk.set_appearance_mode("dark")
 ctk.set_default_color_theme("green")
@@ -208,6 +205,11 @@ class RecognitionWindow:
         for row in records:
             user_id = row[0]
             embedding = np.array(json.loads(row[1]))
+
+            #Normalize the embedding
+            norm = np.linalg.norm(embedding)
+            if norm > 0:
+                embedding = embedding / norm
             known_faces[user_id] = embedding
         
         cur.close()
@@ -231,13 +233,17 @@ class RecognitionWindow:
                         detected_embedding_obj = DeepFace.represent(img_path=face_crop, enforce_detection=False, model_name="VGG-Face")
                         detected_embedding = np.array(detected_embedding_obj[0]['embedding'])
 
+                        norm = np.linalg.norm(detected_embedding)
+                        if norm > 0:
+                            detected_embedding = detected_embedding / norm
+
                         name = "Unknown"
                         color = (0,0,255)
                         min_distance = float('inf')
 
                         #Compare with known embeddings
                         for user_id, known_embedding in self.known_face_embeddings.items():
-                            distance = np.linalg.norm(detected_embedding - known_embedding)
+                            distance = cosine(detected_embedding, known_embedding)
 
                             if distance < min_distance and distance<face_detection_threshold:
                                 min_distance = distance
@@ -340,6 +346,11 @@ class AddNew:
             messagebox.showerror("Error", "User ID cannot be empty")
             return
         imgtosave = self.img[int(self.img.shape[0]/2)-self.circleradius:int(self.img.shape[0]/2)+self.circleradius, int(self.img.shape[1]/2)-self.circleradius:int(self.img.shape[1]/2)+self.circleradius]
+
+        gray = cv2.cvtColor(imgtosave, cv2.COLOR_BGR2GRAY)
+        if np.mean(gray) < 50:
+            messagebox.showerror("Error", "Image too dark. Improve lighting.")
+            return
         
         try:
             embedding_obj = DeepFace.represent(img_path=imgtosave, model_name="VGG-Face", enforce_detection=False)
@@ -407,7 +418,7 @@ class ViewRecords:
         self.window.protocol("WM_DELETE_WINDOW", self.close)
         self.window.geometry('800x600')
         root.iconify()
-        self.user_list = self.get_all_users()
+        
         control_frame = ctk.CTkFrame(self.window)
         control_frame.pack(padx = 10, pady = 10)
 
@@ -430,11 +441,11 @@ class ViewRecords:
 
     def enterpressed(self, event):
         self.load_records_for_date()
-    def get_all_users(self):
+    def get_all_users(self, selected_date):
         conn = get_db_connection()
         if not conn : return []
         cur = conn.cursor()
-        cur.execute("SELECT user_id FROM users ORDER BY user_id asc")
+        cur.execute("SELECT user_id FROM users WHERE DATE(created_at) <= %s ORDER BY user_id asc", (selected_date,))
         users = [row[0] for row in cur.fetchall()]
         cur.close()
         conn.close()
@@ -463,6 +474,7 @@ class ViewRecords:
         present_records = cur.fetchall()
         
         present_users = [rec[0] for rec in present_records]
+        user_list = self.get_all_users(selected_date)
 
         # Display the present users
         header = f'Present on {selected_date_str}:\n{"Time":<25}{"Name"}\n'
@@ -475,7 +487,7 @@ class ViewRecords:
             self.record_display.insert('end', formatted_row, tags='Present')
 
         #Display Absent users
-        absentees = [user for user in self.user_list if user not in present_users]
+        absentees = [user for user in user_list if user not in present_users]
         self.record_display.insert('end', '\n'+'*'*50+'\n\n')
         self.record_display.insert('end', "Absentees:\n")
         for absentee in absentees:
